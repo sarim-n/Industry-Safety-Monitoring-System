@@ -1,0 +1,87 @@
+==============================================================================
+                     NEW 5-VIDEO BATCH -- PROCESSING REPORT                   
+                         Generated: 2026-09-25 11:00:57                       
+==============================================================================
+
+  YOLO CLASS MAPPING
+    0 = helmet
+    1 = mask
+    2 = person
+
+==============================================================================
+  1. VIDEOS FOUND & PROCESSED
+==============================================================================
+  Videos found       : 5
+  Successfully proc. : 5
+
+  Filename                                   | Res         | FPS     | Duration   | Tot.Fr   | Extrac   | Final   | WM           | Flag
+  -------------------------------------------------------------------------------------------------------------------------------------
+  5434223-hd_1920_1080_24fps.mp4             | 1920x1080    | 23.98   | 0m 24s     | 577      | 73       | 35      | --           | --
+  gettyimages-1286759790-640_adpp.mp4        | 768x432     | 29.97   | 0m 09s     | 268      | 27       | 23      | gettyimages  | --
+  gettyimages-1578985062-640_adpp.mp4        | 768x432     | 23.98   | 0m 21s     | 504      | 63       | 16      | gettyimages  | --
+  gettyimages-2216765853-640_adpp.mp4        | 768x432     | 25.00   | 0m 09s     | 226      | 29       | 7       | gettyimages  | --
+  istockphoto-2258622635-640_adpp_is.mp4     | 768x432     | 50.00   | 0m 10s     | 487      | 29       | 13      | istockphoto  | --
+
+==============================================================================
+  2. FRAME STATISTICS
+==============================================================================
+  Candidate frames extracted  : 221
+  Quality-filtered removed    : 36
+  Near-duplicates removed     : 91
+  FINAL FRAMES RETAINED       : 94
+
+  Final frames per video:
+    5434223-hd_1920_1080_24fps.mp4                              : 35
+    gettyimages-1286759790-640_adpp.mp4                         : 23
+    gettyimages-1578985062-640_adpp.mp4                         : 16
+    gettyimages-2216765853-640_adpp.mp4                         : 7
+    istockphoto-2258622635-640_adpp_is.mp4                      : 13
+
+==============================================================================
+  3. PROBLEMATIC VIDEOS
+==============================================================================
+    None
+
+==============================================================================
+  4. WATERMARKED VIDEOS  (NOT modified)
+==============================================================================
+    [!]  gettyimages-1286759790-640_adpp.mp4  (detected: gettyimages)
+    [!]  gettyimages-1578985062-640_adpp.mp4  (detected: gettyimages)
+    [!]  gettyimages-2216765853-640_adpp.mp4  (detected: gettyimages)
+    [!]  istockphoto-2258622635-640_adpp_is.mp4  (detected: istockphoto)
+
+    NOTE: Watermarks were NOT removed. Frames kept as-is.
+    Evaluate licensing before using these frames in training.
+
+==============================================================================
+  5. QUESTIONABLE / NON-INDUSTRIAL FOOTAGE
+==============================================================================
+    None flagged (all filenames appear industrial-context neutral)
+
+==============================================================================
+  6. OUTPUT DIRECTORIES
+==============================================================================
+    Batch root      : C:\Users\sarim\safety monitoring\data_collection\new_batch_5_videos
+    Raw frames      : C:\Users\sarim\safety monitoring\data_collection\new_batch_5_videos\raw_frames
+    Filtered frames : C:\Users\sarim\safety monitoring\data_collection\new_batch_5_videos\filtered_frames  <-- FINAL IMAGES FOR REVIEW
+    Contact sheets  : C:\Users\sarim\safety monitoring\data_collection\new_batch_5_videos\review\contact_sheets
+    Candidates CSV  : C:\Users\sarim\safety monitoring\data_collection\new_batch_5_videos\metadata\candidates.csv
+    Filtered CSV    : C:\Users\sarim\safety monitoring\data_collection\new_batch_5_videos\metadata\filtered.csv
+    Report          : C:\Users\sarim\safety monitoring\data_collection\new_batch_5_videos\reports\processing_report.txt
+
+==============================================================================
+  7. NEXT STEPS  (DO NOT AUTOMATE)
+==============================================================================
+    1. Review contact sheets in:  review/contact_sheets/
+    2. Manually inspect any watermarked or flagged footage
+    3. Annotate retained frames via Roboflow:
+         YOLO class 0 = helmet
+         YOLO class 1 = mask
+         YOLO class 2 = person
+    4. Do NOT train YOLO until annotation + review are complete
+
+  OLD DATASET: NOT TOUCHED -- all output is inside new_batch_5_videos/
+
+==============================================================================
+  NEW 5-VIDEO BATCH PROCESSING COMPLETE
+==============================================================================

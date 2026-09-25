@@ -1,0 +1,44 @@
+==============================================================================
+                        EXTRA VIDEO -- PROCESSING REPORT                      
+                         Generated: 2026-09-25 11:07:45                       
+==============================================================================
+
+  YOLO CLASS MAPPING
+    0 = helmet  |  1 = mask  |  2 = person
+
+==============================================================================
+  VIDEO
+==============================================================================
+  Filename     : gettyimages-1315550872-640_adpp.mp4
+  Resolution   : 768x432
+  FPS          : 25.00
+  Duration     : 0m 22s
+  Total frames : 551
+  Watermark    : gettyimages
+
+==============================================================================
+  FRAME STATISTICS
+==============================================================================
+  Candidate frames extracted  : 69
+  Quality-filtered removed    : 0
+  Near-duplicates removed     : 43
+  FINAL FRAMES RETAINED       : 26
+
+==============================================================================
+  WATERMARK
+==============================================================================
+  [!]  Watermark detected: gettyimages
+  Frames NOT modified. Evaluate licensing before using in training.
+
+==============================================================================
+  OUTPUT (appended to existing batch)
+==============================================================================
+  Batch root      : C:\Users\sarim\safety monitoring\data_collection\new_batch_5_videos
+  Filtered frames : C:\Users\sarim\safety monitoring\data_collection\new_batch_5_videos\filtered_frames
+  Contact sheets  : C:\Users\sarim\safety monitoring\data_collection\new_batch_5_videos\review\contact_sheets
+  Candidates CSV  : C:\Users\sarim\safety monitoring\data_collection\new_batch_5_videos\metadata\candidates.csv
+  Filtered CSV    : C:\Users\sarim\safety monitoring\data_collection\new_batch_5_videos\metadata\filtered.csv
+
+==============================================================================
+  EXTRA VIDEO PROCESSING COMPLETE
+==============================================================================

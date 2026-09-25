@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 3
+names: ['helmet', 'mask', 'person']
+
+roboflow:
+  workspace: sarim-ahmed
+  project: ai-industrial-safety-monitoring
+  version: dataset
+  license: Private
+  url: https://app.roboflow.com/sarim-ahmed/ai-industrial-safety-monitoring/dataset

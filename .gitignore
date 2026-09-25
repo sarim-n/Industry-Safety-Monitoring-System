@@ -1,0 +1,54 @@
+# ── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.env
+.venv
+venv/
+
+# ── Jupyter ──────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+
+# ── Raw video files (too large for git) ──────────────────────────────────────
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+
+# ── Extracted frame images (thousands of files — track only contact sheets) ──
+# raw_frames: never commit
+data_collection/new_batch_5_videos/raw_frames/
+data_collection/candidates/
+data_collection/candidates_additional/
+
+# filtered_frames: also large — exclude individual frames, keep contact sheets
+data_collection/new_batch_5_videos/filtered_frames/
+data_collection/filtered_candidates/
+
+# old review image dirs
+data_collection/candidate_review/
+data_collection/review_after_filter/
+data_collection/video_previews/
+
+# unlabeled images
+unlabeled_images/
+
+# ── Roboflow export data (can be re-downloaded) ──────────────────────────────
+roboflow_batch2/
+
+# ── OS / editor ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+
+# ── Gemini agent scratch ──────────────────────────────────────────────────────
+.agents/
