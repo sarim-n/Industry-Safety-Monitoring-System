@@ -4,10 +4,20 @@ from .ppe_association import (
     PPEAssociator,
     BBox
 )
+from .temporal_confirmation import (
+    TemporalConfirmationConfig,
+    ConfirmedViolationEvent,
+    TemporaryWorkerTrack,
+    TemporalConfirmationEngine
+)
 
 __all__ = [
     "PPEAssociationConfig",
     "PersonPPEState",
     "PPEAssociator",
-    "BBox"
+    "BBox",
+    "TemporalConfirmationConfig",
+    "ConfirmedViolationEvent",
+    "TemporaryWorkerTrack",
+    "TemporalConfirmationEngine"
 ]
