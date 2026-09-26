@@ -42,6 +42,9 @@ class PPEAssociationConfig:
     min_face_height_px: float = 8.0
     min_person_width_px: float = 12.0
 
+    # Face-only / Head-only person detection aspect ratio threshold
+    max_face_only_aspect_ratio: float = 1.15
+
 
 @dataclass
 class BBox:
@@ -92,6 +95,83 @@ def box_iou(box1: Tuple[float, float, float, float], box2: Tuple[float, float, f
     union = area1 + area2 - inter
     return inter / union if union > 0 else 0.0
 
+
+def is_helmet_region_observable(
+    p_box: BBox,
+    img_width: float,
+    img_height: float,
+    head_roi: BBox,
+    config: PPEAssociationConfig
+) -> bool:
+    """
+    Determines whether the head/top-of-person region required to observe a helmet
+    is sufficiently visible within the image frame.
+    
+    Observability criteria for Helmet:
+    1. Top frame boundary truncation check: head_y1 must not extend past top image edge.
+    2. Face-only / head-only crop check: person box aspect ratio (height / width) must
+       indicate body/head context rather than a face-only crop (aspect_ratio >= max_face_only_aspect_ratio).
+    3. Person width must be >= min_person_width_px.
+    4. Head ROI visible height inside frame must be >= min_head_height_px.
+    """
+    # 1. Top boundary truncation check
+    top_offset_px = min(25.0, max(0.0, abs(config.head_region_top_offset_ratio) * p_box.height))
+    if (p_box.y1 - top_offset_px) < config.boundary_margin_px or p_box.y1 <= config.boundary_margin_px:
+        return False
+
+    # 2. Face-only / head-only crop check via aspect ratio
+    aspect_ratio = p_box.height / max(1.0, p_box.width)
+    if aspect_ratio < config.max_face_only_aspect_ratio:
+        return False
+
+    # 3. Minimum person width check
+    if p_box.width < config.min_person_width_px:
+        return False
+
+    # 4. Visible Head ROI height inside canvas
+    vis_head_y1 = max(0.0, p_box.y1 + config.head_region_top_offset_ratio * p_box.height)
+    vis_head_y2 = min(float(img_height), head_roi.y2)
+    vis_head_height = max(0.0, vis_head_y2 - vis_head_y1)
+
+    if vis_head_height < config.min_head_height_px:
+        return False
+
+    return True
+
+
+def is_mask_region_observable(
+    p_box: BBox,
+    img_width: float,
+    img_height: float,
+    face_roi: BBox,
+    config: PPEAssociationConfig
+) -> bool:
+    """
+    Determines whether the face region required to observe a mask is sufficiently
+    visible within the image frame.
+    
+    Observability criteria for Mask:
+    1. Face ROI vertical extent must be inside frame boundaries.
+    2. Person width must be >= min_person_width_px.
+    3. Visible Face ROI height inside frame must be >= min_face_height_px.
+    """
+    # 1. Vertical boundary truncation of face ROI
+    if face_roi.y1 < config.boundary_margin_px or face_roi.y2 > (float(img_height) - config.boundary_margin_px):
+        return False
+
+    # 2. Minimum person width check
+    if p_box.width < config.min_person_width_px:
+        return False
+
+    # 3. Visible Face ROI height inside canvas
+    vis_face_y1 = max(0.0, face_roi.y1)
+    vis_face_y2 = min(float(img_height), face_roi.y2)
+    vis_face_height = max(0.0, vis_face_y2 - vis_face_y1)
+
+    if vis_face_height < config.min_face_height_px:
+        return False
+
+    return True
 
 
 @dataclass
@@ -202,21 +282,16 @@ class PPEAssociator:
             face_y2 = p_box.y1 + (self.config.face_region_top_ratio + self.config.face_region_height_ratio) * p_box.height
             face_roi = BBox(face_x1, face_y1, face_x2, face_y2)
 
-            # 4. Assess Head / Face Visibility
-            # Top boundary touching can indicate head truncation
-            if touches_top and (p_box.y1 <= 2.0 or head_roi.height < self.config.min_head_height_px):
-                head_vis = "CROPPED"
-            elif p_box.width < self.config.min_person_width_px:
-                head_vis = "CROPPED"
-            else:
+            # 4. Assess Head / Face Visibility (PPE Observability)
+            if is_helmet_region_observable(p_box, img_width, img_height, head_roi, self.config):
                 head_vis = "VISIBLE"
-
-            if touches_top and (face_y1 <= 2.0 or face_roi.height < self.config.min_face_height_px):
-                face_vis = "CROPPED"
-            elif p_box.width < self.config.min_person_width_px:
-                face_vis = "CROPPED"
             else:
+                head_vis = "CROPPED"
+
+            if is_mask_region_observable(p_box, img_width, img_height, face_roi, self.config):
                 face_vis = "VISIBLE"
+            else:
+                face_vis = "CROPPED"
 
             state = PersonPPEState(
                 person_index=idx + 1,
