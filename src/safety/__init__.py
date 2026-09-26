@@ -10,6 +10,16 @@ from .temporal_confirmation import (
     TemporaryWorkerTrack,
     TemporalConfirmationEngine
 )
+from .alert_manager import (
+    AlertManagerConfig,
+    AlertManager
+)
+from .voice_alert import (
+    VoiceAlertEngine
+)
+from .evidence import (
+    EvidenceManager
+)
 
 __all__ = [
     "PPEAssociationConfig",
@@ -19,5 +29,9 @@ __all__ = [
     "TemporalConfirmationConfig",
     "ConfirmedViolationEvent",
     "TemporaryWorkerTrack",
-    "TemporalConfirmationEngine"
+    "TemporalConfirmationEngine",
+    "AlertManagerConfig",
+    "AlertManager",
+    "VoiceAlertEngine",
+    "EvidenceManager"
 ]

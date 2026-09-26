@@ -10,15 +10,15 @@
 
 ## 2. Live Runtime Performance Metrics (RTX 2050 4 GB VRAM)
 
-- **Total Frames Processed**: 301 frames in 56.44 seconds
-- **Average Measured Pipeline Throughput**: **5.3 FPS**
-- **Average Total Frame Latency**: **72.31 ms / frame**
+- **Total Frames Processed**: 301 frames in 14.55 seconds
+- **Average Measured Pipeline Throughput**: **20.7 FPS**
+- **Average Total Frame Latency**: **26.36 ms / frame**
 
 ### Per-Stage Latency Breakdown
-1. **YOLOv8s @ 800 Inference**: `58.87 ms` (81.4% of total)
-2. **PPE Association (`PPEAssociator`)**: `0.23 ms` (0.3% of total)
-3. **Temporal Confirmation (`TemporalConfirmationEngine`)**: `0.06 ms` (0.1% of total)
-4. **OpenCV HUD Rendering & Drawing**: `2.70 ms` (3.7% of total)
+1. **YOLOv8s @ 800 Inference**: `22.12 ms` (83.9% of total)
+2. **PPE Association (`PPEAssociator`)**: `0.07 ms` (0.3% of total)
+3. **Temporal Confirmation (`TemporalConfirmationEngine`)**: `0.02 ms` (0.1% of total)
+4. **OpenCV HUD Rendering & Drawing**: `1.09 ms` (4.1% of total)
 
 ## 3. Worker & Violation Confirmation Summary
 - **Total Unique Workers Observed**: 6

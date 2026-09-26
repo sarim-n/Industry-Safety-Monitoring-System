@@ -42,6 +42,16 @@ from src.safety.temporal_confirmation import (
     TemporaryWorkerTrack,
     TemporalConfirmationEngine
 )
+from src.safety.alert_manager import (
+    AlertManagerConfig,
+    AlertManager
+)
+from src.safety.voice_alert import (
+    VoiceAlertEngine
+)
+from src.safety.evidence import (
+    EvidenceManager
+)
 
 # Status color palette (BGR format)
 STATUS_COLORS = {
@@ -63,6 +73,7 @@ def parse_args():
     parser.add_argument("--headless", action="store_true", help="Run without cv2.imshow GUI display")
     parser.add_argument("--max-frames", type=int, default=0, help="Max frames to process (0 = process all)")
     parser.add_argument("--save-video", type=str, default="", help="Optional path to save annotated output video")
+    parser.add_argument("--disable-voice", action="store_true", help="Disable TTS voice alerts")
     return parser.parse_args()
 
 
@@ -88,12 +99,13 @@ def main():
             sys.exit(1)
 
     print("==================================================================")
-    print("   LIVE OPENCV SAFETY MONITORING PIPELINE (PHASE 3)")
+    print("   LIVE OPENCV SAFETY MONITORING PIPELINE (PHASE 4: ALERTS & EVIDENCE)")
     print("==================================================================")
     print(f"  Model Weights : {weights_path}")
     print(f"  Resolution    : {args.imgsz}x{args.imgsz}")
     print(f"  Input Source  : {cap_source} {'(Webcam)' if is_webcam else '(Video File)'}")
     print(f"  Headless Mode : {args.headless}")
+    print(f"  Voice Alerts  : {'Disabled' if args.disable_voice else 'Enabled (Offline TTS)'}")
 
     # 3. Open Video Capture
     cap = cv2.VideoCapture(cap_source)
@@ -115,7 +127,7 @@ def main():
     print(f"  Source Props  : {frame_w}x{frame_h} @ {effective_fps:.1f} FPS (Total frames: {total_source_frames})")
 
     # 4. Initialize Core Pipeline Engines
-    print("\n[LOADING YOLO MODEL]")
+    print("\n[LOADING YOLO MODEL & PHASE 4 ENGINES]")
     model = YOLO(str(weights_path))
 
     # Frozen Validation-Selected Confidence Thresholds
@@ -136,6 +148,14 @@ def main():
         uncertain_breaks_streak=True
     )
     temporal_engine = TemporalConfirmationEngine(temp_config)
+
+    # Phase 4 Engines: AlertManager, VoiceAlertEngine, EvidenceManager
+    alert_manager = AlertManager(AlertManagerConfig(cooldown_seconds=5.0))
+    voice_engine = VoiceAlertEngine(enabled=not args.disable_voice)
+    evidence_manager = EvidenceManager(
+        evidence_dir=str(Path(PROJECT_ROOT) / "evidence"),
+        csv_path=str(Path(PROJECT_ROOT) / "reports" / "alerts_v1" / "events.csv")
+    )
 
     # Video Writer if requested
     video_writer = None
@@ -160,6 +180,9 @@ def main():
 
     frame_counter = 0
     total_confirmed_events = 0
+    total_alerts_emitted = 0
+    total_alerts_suppressed = 0
+    total_evidence_saved = 0
     unique_tracks_seen = set()
 
     perf_csv_rows = []
@@ -207,10 +230,20 @@ def main():
             )
             t3_end = time.perf_counter()
 
+            emitted_alerts_this_frame = []
             if events:
                 total_confirmed_events += len(events)
                 for e in events:
                     print(f"  >>> [FRAME {frame_counter:4d} | t={e.timestamp_sec:.2f}s] CONFIRMED EVENT: Track #{e.track_id} -> {e.violation} (Streak: {e.consecutive_streak})")
+                    
+                    # Phase 4 AlertManager Check
+                    if alert_manager.should_emit_alert(e.track_id, e.violation, e.timestamp_sec):
+                        total_alerts_emitted += 1
+                        voice_engine.speak(e.violation)
+                        emitted_alerts_this_frame.append(e)
+                    else:
+                        total_alerts_suppressed += 1
+                        print(f"      ↳ ALERT SUPPRESSED (Cooldown active for Track #{e.track_id})")
 
             # Update unique tracks seen
             for track in temporal_engine.active_tracks:
@@ -263,6 +296,16 @@ def main():
 
             t4_end = time.perf_counter()
 
+            # --- STAGE 5: Evidence Capture ---
+            for e in emitted_alerts_this_frame:
+                saved_path = evidence_manager.capture_evidence(
+                    frame=annotated_frame,
+                    worker_id=e.track_id,
+                    violation_type=e.violation
+                )
+                total_evidence_saved += 1
+                print(f"      ↳ EVIDENCE CAPTURED: {saved_path}")
+
             # Record Latencies
             t_frame_end = time.perf_counter()
             total_ms = (t_frame_end - t_frame_start) * 1000.0
@@ -281,17 +324,19 @@ def main():
 
             # Draw HUD Box
             hud_bg = (20, 20, 20)
-            cv2.rectangle(annotated_frame, (10, 10), (480, 115), hud_bg, -1)
-            cv2.rectangle(annotated_frame, (10, 10), (480, 115), (0, 255, 0), 1)
+            cv2.rectangle(annotated_frame, (10, 10), (540, 135), hud_bg, -1)
+            cv2.rectangle(annotated_frame, (10, 10), (540, 135), (0, 255, 0), 1)
 
             cv2.putText(annotated_frame, f"FPS: {rolling_fps:.1f} (YOLO: {np.mean(yolo_times):.1f}ms | Assoc: {np.mean(assoc_times):.1f}ms | Temp: {np.mean(temp_times):.1f}ms)",
-                        (20, 32), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 1, cv2.LINE_AA)
+                        (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (0, 255, 0), 1, cv2.LINE_AA)
             cv2.putText(annotated_frame, f"Frame: {frame_counter} | Active Workers: {len(temporal_engine.active_tracks)} | Confirmed Events: {total_confirmed_events}",
-                        (20, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1, cv2.LINE_AA)
+                        (20, 52), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (255, 255, 255), 1, cv2.LINE_AA)
+            cv2.putText(annotated_frame, f"Alerts Emitted: {total_alerts_emitted} | Suppressed: {total_alerts_suppressed} | Evidence Saved: {total_evidence_saved}",
+                        (20, 74), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (0, 255, 255), 1, cv2.LINE_AA)
             cv2.putText(annotated_frame, f"Res: {args.imgsz}x{args.imgsz} | Model: YOLOv8s @ 800",
-                        (20, 78), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (200, 200, 200), 1, cv2.LINE_AA)
+                        (20, 96), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (200, 200, 200), 1, cv2.LINE_AA)
             cv2.putText(annotated_frame, "Press 'q' to exit live window",
-                        (20, 101), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (150, 150, 150), 1, cv2.LINE_AA)
+                        (20, 118), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (150, 150, 150), 1, cv2.LINE_AA)
 
             # Record CSV performance row
             perf_csv_rows.append({
@@ -312,7 +357,7 @@ def main():
 
             # Display GUI window unless headless
             if not args.headless:
-                cv2.imshow("Industrial AI Safety Monitoring — Phase 3 Live Pipeline", annotated_frame)
+                cv2.imshow("Industrial AI Safety Monitoring — Phase 4 Live Pipeline", annotated_frame)
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord('q'):
                     print("\n[INFO] 'q' pressed. Exiting live loop cleanly...")
@@ -323,6 +368,7 @@ def main():
                 break
 
     finally:
+        voice_engine.stop()
         t_loop_end = time.perf_counter()
         total_elapsed_sec = t_loop_end - t_loop_start
 
@@ -340,8 +386,10 @@ def main():
         writer.writeheader()
         writer.writerows(perf_csv_rows)
 
-    # 6. Generate Live Pipeline Summary Markdown Report
-    summary_md_path = reports_dir / "live_pipeline_summary.md"
+    # 6. Generate Alert Summary Markdown Report (Phase 4 Deliverable)
+    alerts_dir = Path(PROJECT_ROOT) / "reports" / "alerts_v1"
+    alerts_dir.mkdir(parents=True, exist_ok=True)
+    alert_summary_path = alerts_dir / "alert_summary.md"
     mean_fps = frame_counter / total_elapsed_sec if total_elapsed_sec > 0 else 0.0
     mean_yolo = np.mean(yolo_times) if yolo_times else 0.0
     mean_assoc = np.mean(assoc_times) if assoc_times else 0.0
@@ -349,46 +397,48 @@ def main():
     mean_render = np.mean(render_times) if render_times else 0.0
     mean_total = np.mean(frame_times) if frame_times else 0.0
 
-    with open(summary_md_path, 'w', encoding='utf-8') as f:
-        f.write("# Phase 3 Live OpenCV Pipeline — Performance & Integration Summary\n\n")
+    with open(alert_summary_path, 'w', encoding='utf-8') as f:
+        f.write("# Phase 4: Alerts & Evidence Capture Summary Report\n\n")
         f.write("## 1. Executive Summary & Setup\n")
+        f.write("- **Pipeline Version**: Phase 4 Live Safety Monitoring System\n")
         f.write("- **Script**: `run_live.py`\n")
         f.write("- **Target Model**: `runs/detect/safety_v1-4_run2b_yolov8s_800/weights/best.pt` (YOLOv8s @ 800)\n")
         f.write(f"- **Input Source**: `{cap_source}` {'(Webcam Mode)' if is_webcam else '(Video File Mode)'}\n")
         f.write(f"- **Resolution**: {frame_w}x{frame_h} @ {effective_fps:.1f} FPS\n")
         f.write("- **Operating Thresholds**: `PERSON_CONF=0.50`, `HELMET_CONF=0.25`, `MASK_CONF=0.20`\n")
-        f.write("- **TEST set status**: Untouched and NOT evaluated.\n\n")
+        f.write("- **Temporal Config**: `CONFIRMATION_FRAMES=5`, `ALERT_COOLDOWN_SECONDS=5.0`\n")
+        f.write("- **TEST Set Status**: Untouched and NOT evaluated.\n\n")
 
-        f.write("## 2. Live Runtime Performance Metrics (RTX 2050 4 GB VRAM)\n\n")
-        f.write(f"- **Total Frames Processed**: {frame_counter} frames in {total_elapsed_sec:.2f} seconds\n")
-        f.write(f"- **Average Measured Pipeline Throughput**: **{mean_fps:.1f} FPS**\n")
-        f.write(f"- **Average Total Frame Latency**: **{mean_total:.2f} ms / frame**\n\n")
+        f.write("## 2. Phase 4 Alert & Evidence Metrics\n\n")
+        f.write(f"- **Total Frames Processed**: {frame_counter} frames ({total_elapsed_sec:.2f} seconds)\n")
+        f.write(f"- **Unique Workers Observed**: {len(unique_tracks_seen)}\n")
+        f.write(f"- **Confirmed Violation Events**: {total_confirmed_events}\n")
+        f.write(f"- **Voice & System Alerts Emitted**: **{total_alerts_emitted}**\n")
+        f.write(f"- **Alerts Suppressed by Cooldown**: **{total_alerts_suppressed}**\n")
+        f.write(f"- **Evidence Images Created**: **{total_evidence_saved}**\n")
+        f.write(f"- **Event Log Path**: `reports/alerts_v1/events.csv`\n")
+        f.write(f"- **Evidence Directory**: `evidence/`\n\n")
 
-        f.write("### Per-Stage Latency Breakdown\n")
-        f.write(f"1. **YOLOv8s @ 800 Inference**: `{mean_yolo:.2f} ms` ({mean_yolo/mean_total*100:.1f}% of total)\n")
-        f.write(f"2. **PPE Association (`PPEAssociator`)**: `{mean_assoc:.2f} ms` ({mean_assoc/mean_total*100:.1f}% of total)\n")
-        f.write(f"3. **Temporal Confirmation (`TemporalConfirmationEngine`)**: `{mean_temp:.2f} ms` ({mean_temp/mean_total*100:.1f}% of total)\n")
-        f.write(f"4. **OpenCV HUD Rendering & Drawing**: `{mean_render:.2f} ms` ({mean_render/mean_total*100:.1f}% of total)\n\n")
+        f.write("## 3. Real-Time Pipeline Throughput & Latency\n\n")
+        f.write(f"- **Average Measured Throughput**: **{mean_fps:.1f} FPS**\n")
+        f.write(f"- **Average Frame Latency**: **{mean_total:.2f} ms / frame**\n")
+        f.write(f"- **YOLO Inference Latency**: `{mean_yolo:.2f} ms`\n")
+        f.write(f"- **PPE Association Latency**: `{mean_assoc:.2f} ms`\n")
+        f.write(f"- **Temporal Confirmation Latency**: `{mean_temp:.2f} ms`\n")
+        f.write(f"- **HUD & Evidence Rendering Latency**: `{mean_render:.2f} ms`\n\n")
 
-        f.write("## 3. Worker & Violation Confirmation Summary\n")
-        f.write(f"- **Total Unique Workers Observed**: {len(unique_tracks_seen)}\n")
-        f.write(f"- **Total Confirmed Violation Events Emitted**: {total_confirmed_events}\n\n")
+        f.write("## 4. Strict Protection Confirmations\n")
+        f.write("- **Dataset & Splits**: Untouched.\n")
+        f.write("- **Model Architecture & Weights**: Untouched (`runs/detect/safety_v1-4_run2b_yolov8s_800/weights/best.pt`).\n")
+        f.write("- **Confidence Thresholds**: Untouched (`PERSON_CONF=0.50`, `HELMET_CONF=0.25`, `MASK_CONF=0.20`).\n")
+        f.write("- **PPE Association Algorithm**: Untouched.\n")
+        f.write("- **Temporal Confirmation Engine**: Untouched.\n")
+        f.write("- **TEST Set**: Untouched.\n")
 
-        f.write("## 4. Integration & GUI Verification\n")
-        f.write("- **Video File Integration**: Verified frame-by-frame chronological processing.\n")
-        f.write("- **Webcam Integration**: Supported via `--source 0`.\n")
-        f.write("- **Clean Window Quit**: Tested and verified clean exit upon pressing `'q'`.\n\n")
-
-        f.write("## 5. Strict Protection Confirmations\n")
-        f.write("- **TEST Set**: TEST set was NOT loaded, accessed, or evaluated.\n")
-        f.write("- **Dataset & Model**: Dataset images, labels, splits, and `best.pt` weights were NOT modified.\n")
-        f.write("- **Confidence Thresholds**: Confidence thresholds were NOT changed.\n")
-        f.write("- **PPE Association Engine**: PPE association algorithm was NOT changed.\n")
-        f.write("- **Temporal Confirmation Engine**: Temporal confirmation engine was NOT changed.\n")
-
-    print(f"\n[SUMMARY REPORT SAVED] {summary_md_path}")
+    print(f"\n[ALERT SUMMARY REPORT SAVED] {alert_summary_path}")
     print(f"[PERFORMANCE LOG SAVED] {perf_csv_path}")
-    print("\n================ LIVE PIPELINE RUN COMPLETE ================")
+    print("\n================ PHASE 4 PIPELINE RUN COMPLETE ================")
+
 
 if __name__ == "__main__":
     main()
