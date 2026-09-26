@@ -36,6 +36,9 @@ from src.safety.ppe_association import (
     PersonPPEState,
     PPEAssociator
 )
+from src.safety.person_suppression import (
+    suppress_duplicate_person_detections
+)
 from src.safety.temporal_confirmation import (
     TemporalConfirmationConfig,
     ConfirmedViolationEvent,
@@ -182,6 +185,7 @@ def main():
     # Latency and Performance Tracking
     frame_times = collections.deque(maxlen=30)
     yolo_times = collections.deque(maxlen=30)
+    suppress_times = collections.deque(maxlen=30)
     assoc_times = collections.deque(maxlen=30)
     temp_times = collections.deque(maxlen=30)
     render_times = collections.deque(maxlen=30)
@@ -223,9 +227,14 @@ def main():
                 xyxy = box.xyxy[0].cpu().numpy().tolist()
                 raw_dets.append({'cls': c, 'conf': conf, 'box': xyxy})
 
+            # --- STAGE 1.5: Rule 1 Person Duplicate Suppression ---
+            t1_5_start = time.perf_counter()
+            filtered_dets = suppress_duplicate_person_detections(raw_dets, frame_w, frame_h)
+            t1_5_end = time.perf_counter()
+
             # --- STAGE 2: PPE Association ---
             t2_start = time.perf_counter()
-            person_states = associator.process_detections(raw_dets, frame_w, frame_h)
+            person_states = associator.process_detections(filtered_dets, frame_w, frame_h)
             t2_end = time.perf_counter()
 
             # --- STAGE 3: Temporal Confirmation ---
@@ -318,12 +327,14 @@ def main():
             t_frame_end = time.perf_counter()
             total_ms = (t_frame_end - t_frame_start) * 1000.0
             yolo_ms = (t1 - t0) * 1000.0
+            suppress_ms = (t1_5_end - t1_5_start) * 1000.0
             assoc_ms = (t2_end - t2_start) * 1000.0
             temp_ms = (t3_end - t3_start) * 1000.0
             render_ms = (t4_end - t4_start) * 1000.0
 
             frame_times.append(total_ms)
             yolo_times.append(yolo_ms)
+            suppress_times.append(suppress_ms)
             assoc_times.append(assoc_ms)
             temp_times.append(temp_ms)
             render_times.append(render_ms)
@@ -335,7 +346,7 @@ def main():
             cv2.rectangle(annotated_frame, (10, 10), (540, 135), hud_bg, -1)
             cv2.rectangle(annotated_frame, (10, 10), (540, 135), (0, 255, 0), 1)
 
-            cv2.putText(annotated_frame, f"FPS: {rolling_fps:.1f} (YOLO: {np.mean(yolo_times):.1f}ms | Assoc: {np.mean(assoc_times):.1f}ms | Temp: {np.mean(temp_times):.1f}ms)",
+            cv2.putText(annotated_frame, f"FPS: {rolling_fps:.1f} (YOLO: {np.mean(yolo_times):.1f}ms | Supp: {np.mean(suppress_times):.3f}ms | Assoc: {np.mean(assoc_times):.1f}ms | Temp: {np.mean(temp_times):.1f}ms)",
                         (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (0, 255, 0), 1, cv2.LINE_AA)
             cv2.putText(annotated_frame, f"Frame: {frame_counter} | Active Workers: {len(temporal_engine.active_tracks)} | Confirmed Events: {total_confirmed_events}",
                         (20, 52), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (255, 255, 255), 1, cv2.LINE_AA)
@@ -369,6 +380,7 @@ def main():
                 'frame': frame_counter,
                 'total_frame_ms': f"{total_ms:.2f}",
                 'yolo_ms': f"{yolo_ms:.2f}",
+                'suppress_ms': f"{suppress_ms:.3f}",
                 'assoc_ms': f"{assoc_ms:.2f}",
                 'temp_ms': f"{temp_ms:.2f}",
                 'render_ms': f"{render_ms:.2f}",

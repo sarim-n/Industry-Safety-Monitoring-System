@@ -1,0 +1,7 @@
+Video,Frames,Raw_Person_Detections,Prod_Person_Detections,Suppressed_Detections,Baseline_Unique_IDs,Prod_Unique_IDs,Baseline_Dup_Track_Frames,Prod_Dup_Track_Frames,Baseline_Status_Switches,Prod_Status_Switches,Baseline_Alerts,Prod_Alerts,Suppression_Overhead_MS,Baseline_Latency_MS,Prod_Latency_MS,Baseline_FPS,Prod_FPS
+4048038451-preview.mp4,301,611,611,0,6,6,22,22,102,102,5,5,0.082,30.57,30.60,32.7,32.7
+8482302-hd_1920_1080_25fps.mp4,607,1125,1082,43,22,22,287,273,231,178,10,7,0.070,21.22,21.25,47.1,47.1
+4017518657-preview.mp4,236,499,496,3,7,7,50,45,76,76,6,6,0.056,21.71,21.73,46.1,46.0
+19832490-hd_1920_1080_25fps.mp4,144,1048,1021,27,35,32,144,143,248,230,10,10,1.472,20.62,22.04,48.5,45.4
+no safety.mp4,322,1054,1037,17,15,14,266,266,26,26,15,15,0.128,20.62,20.70,48.5,48.3
+helmet+mask+gloves.mp4,580,1223,1217,6,13,13,205,205,160,156,2,2,0.071,19.30,19.33,51.8,51.7
