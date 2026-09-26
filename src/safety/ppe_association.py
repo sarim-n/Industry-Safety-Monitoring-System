@@ -43,7 +43,8 @@ class PPEAssociationConfig:
     min_person_width_px: float = 12.0
 
     # Face-only / Head-only person detection aspect ratio threshold
-    max_face_only_aspect_ratio: float = 1.15
+    # Face crops typically have aspect ratio (height / width) < 1.0 (width >= height)
+    max_face_only_aspect_ratio: float = 1.00
 
 
 @dataclass
@@ -108,15 +109,14 @@ def is_helmet_region_observable(
     is sufficiently visible within the image frame.
     
     Observability criteria for Helmet:
-    1. Top frame boundary truncation check: head_y1 must not extend past top image edge.
+    1. Top frame boundary truncation check: p_box.y1 must not touch or extend past top edge.
     2. Face-only / head-only crop check: person box aspect ratio (height / width) must
        indicate body/head context rather than a face-only crop (aspect_ratio >= max_face_only_aspect_ratio).
     3. Person width must be >= min_person_width_px.
     4. Head ROI visible height inside frame must be >= min_head_height_px.
     """
     # 1. Top boundary truncation check
-    top_offset_px = min(25.0, max(0.0, abs(config.head_region_top_offset_ratio) * p_box.height))
-    if (p_box.y1 - top_offset_px) < config.boundary_margin_px or p_box.y1 <= config.boundary_margin_px:
+    if p_box.y1 <= config.boundary_margin_px:
         return False
 
     # 2. Face-only / head-only crop check via aspect ratio
@@ -129,7 +129,7 @@ def is_helmet_region_observable(
         return False
 
     # 4. Visible Head ROI height inside canvas
-    vis_head_y1 = max(0.0, p_box.y1 + config.head_region_top_offset_ratio * p_box.height)
+    vis_head_y1 = max(0.0, head_roi.y1)
     vis_head_y2 = min(float(img_height), head_roi.y2)
     vis_head_height = max(0.0, vis_head_y2 - vis_head_y1)
 
@@ -209,6 +209,30 @@ class PersonPPEState:
     # Final Derived Safety Status
     safety_status: str = "UNCERTAIN"
 
+    # Phase 7.6 Diagnostics
+    head_roi_bbox: Optional[Tuple[float, float, float, float]] = None
+    face_roi_bbox: Optional[Tuple[float, float, float, float]] = None
+    head_observable: bool = True
+    face_observable: bool = True
+    helmet_candidate_count: int = 0
+    mask_candidate_count: int = 0
+    uncertain_reason: Optional[str] = None
+
+    def get_debug_summary(self) -> str:
+        w = max(0.0, self.person_bbox[2] - self.person_bbox[0])
+        h = max(0.0, self.person_bbox[3] - self.person_bbox[1])
+        h_cand = self.helmet_candidate_count
+        m_cand = self.mask_candidate_count
+        h_score = f"{self.helmet_association_score:.2f}" if self.helmet_association_score is not None else "N/A"
+        m_score = f"{self.mask_association_score:.2f}" if self.mask_association_score is not None else "N/A"
+        return (
+            f"Worker #{self.person_index} | bbox=({self.person_bbox[0]:.1f},{self.person_bbox[1]:.1f},{self.person_bbox[2]:.1f},{self.person_bbox[3]:.1f}) "
+            f"w={w:.1f} h={h:.1f} | Head Obs={self.head_observable} Face Obs={self.face_observable} | "
+            f"Helmet Cand={h_cand} Score={h_score} State={self.helmet_detected} | "
+            f"Mask Cand={m_cand} Score={m_score} State={self.mask_detected} | "
+            f"Status={self.safety_status} (Reason: {self.uncertain_reason})"
+        )
+
 
 
 class PPEAssociator:
@@ -283,15 +307,11 @@ class PPEAssociator:
             face_roi = BBox(face_x1, face_y1, face_x2, face_y2)
 
             # 4. Assess Head / Face Visibility (PPE Observability)
-            if is_helmet_region_observable(p_box, img_width, img_height, head_roi, self.config):
-                head_vis = "VISIBLE"
-            else:
-                head_vis = "CROPPED"
+            head_obs = is_helmet_region_observable(p_box, img_width, img_height, head_roi, self.config)
+            face_obs = is_mask_region_observable(p_box, img_width, img_height, face_roi, self.config)
 
-            if is_mask_region_observable(p_box, img_width, img_height, face_roi, self.config):
-                face_vis = "VISIBLE"
-            else:
-                face_vis = "CROPPED"
+            head_vis = "VISIBLE" if head_obs else "CROPPED"
+            face_vis = "VISIBLE" if face_obs else "CROPPED"
 
             state = PersonPPEState(
                 person_index=idx + 1,
@@ -305,7 +325,11 @@ class PPEAssociator:
                 face_visibility=face_vis,
                 helmet_detected="UNKNOWN",
                 mask_detected="UNKNOWN",
-                safety_status="UNCERTAIN"
+                safety_status="UNCERTAIN",
+                head_roi_bbox=(head_roi.x1, head_roi.y1, head_roi.x2, head_roi.y2),
+                face_roi_bbox=(face_roi.x1, face_roi.y1, face_roi.x2, face_roi.y2),
+                head_observable=head_obs,
+                face_observable=face_obs
             )
             person_states.append(state)
             person_head_rois.append(head_roi)
@@ -313,6 +337,8 @@ class PPEAssociator:
 
         # 5. Calculate Helmet Association Scores & Match Deterministically
         helmet_candidates = []  # (score, person_idx, helmet_idx)
+        per_person_helmet_cand_counts = [0] * len(persons)
+
         for p_idx, p in enumerate(persons):
             p_box = p['box']
             head_roi = person_head_rois[p_idx]
@@ -320,16 +346,12 @@ class PPEAssociator:
             for h_idx, h in enumerate(helmets):
                 h_box = h['box']
 
-                # Compute Score Components
-                # (a) Overlap of helmet with Head ROI (Intersection over Helmet Area)
                 inter = compute_intersection(h_box, head_roi)
                 ioh = inter / h_box.area if h_box.area > 0 else 0.0
 
-                # (b) Horizontal center alignment
                 horiz_dist_norm = abs(h_box.center_x - p_box.center_x) / max(1.0, p_box.width)
                 horiz_score = max(0.0, 1.0 - horiz_dist_norm)
 
-                # (c) Vertical position check (helmet center should be near top of person box)
                 vert_dist_norm = (h_box.center_y - p_box.y1) / max(1.0, p_box.height)
                 if -0.25 <= vert_dist_norm <= 0.40:
                     vert_score = 1.0 - abs(vert_dist_norm - 0.05) / 0.35
@@ -340,8 +362,11 @@ class PPEAssociator:
 
                 if total_score >= self.config.min_helmet_association_score and ioh > 0.10:
                     helmet_candidates.append((total_score, p_idx, h_idx))
+                    per_person_helmet_cand_counts[p_idx] += 1
 
-        # Sort candidate matches by score descending for greedy deterministic 1-to-1 matching
+        for idx, count in enumerate(per_person_helmet_cand_counts):
+            person_states[idx].helmet_candidate_count = count
+
         helmet_candidates.sort(key=lambda x: x[0], reverse=True)
 
         assigned_persons_helmet = set()
@@ -361,6 +386,8 @@ class PPEAssociator:
 
         # 6. Calculate Mask Association Scores & Match Deterministically
         mask_candidates = []  # (score, person_idx, mask_idx)
+        per_person_mask_cand_counts = [0] * len(persons)
+
         for p_idx, p in enumerate(persons):
             p_box = p['box']
             face_roi = person_face_rois[p_idx]
@@ -368,7 +395,6 @@ class PPEAssociator:
             for m_idx, m in enumerate(masks):
                 m_box = m['box']
 
-                # Compute Score Components
                 inter = compute_intersection(m_box, face_roi)
                 iom = inter / m_box.area if m_box.area > 0 else 0.0
 
@@ -385,6 +411,10 @@ class PPEAssociator:
 
                 if total_score >= self.config.min_mask_association_score and iom > 0.10:
                     mask_candidates.append((total_score, p_idx, m_idx))
+                    per_person_mask_cand_counts[p_idx] += 1
+
+        for idx, count in enumerate(per_person_mask_cand_counts):
+            person_states[idx].mask_candidate_count = count
 
         mask_candidates.sort(key=lambda x: x[0], reverse=True)
 
@@ -405,14 +435,14 @@ class PPEAssociator:
 
         # 7. Resolve Final PPE States & Safety Decision Logic
         for state in person_states:
-            # Handle Helmet status if not YES
+            # Handle Helmet status if not YES (Associated PPE takes priority!)
             if state.helmet_detected != "YES":
                 if state.head_visibility == "CROPPED":
                     state.helmet_detected = "UNKNOWN"
                 else:
                     state.helmet_detected = "NO"
 
-            # Handle Mask status if not YES
+            # Handle Mask status if not YES (Associated PPE takes priority!)
             if state.mask_detected != "YES":
                 if state.face_visibility == "CROPPED":
                     state.mask_detected = "UNKNOWN"
@@ -425,14 +455,24 @@ class PPEAssociator:
 
             if h_det == "YES" and m_det == "YES":
                 state.safety_status = "SAFE"
+                state.uncertain_reason = None
             elif h_det == "NO" and m_det == "YES":
                 state.safety_status = "NO_HELMET"
+                state.uncertain_reason = None
             elif h_det == "YES" and m_det == "NO":
                 state.safety_status = "NO_MASK"
+                state.uncertain_reason = None
             elif h_det == "NO" and m_det == "NO":
                 state.safety_status = "NO_HELMET_AND_MASK"
+                state.uncertain_reason = None
             else:
-                # Any UNKNOWN state results in UNCERTAIN (never false safety violation)
                 state.safety_status = "UNCERTAIN"
+                if h_det == "UNKNOWN" and m_det == "UNKNOWN":
+                    state.uncertain_reason = "BOTH_REGIONS_UNOBSERVABLE"
+                elif h_det == "UNKNOWN":
+                    state.uncertain_reason = "HELMET_REGION_UNOBSERVABLE"
+                else:
+                    state.uncertain_reason = "MASK_REGION_UNOBSERVABLE"
 
         return person_states
+
