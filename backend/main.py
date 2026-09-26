@@ -4,11 +4,12 @@ FastAPI Main Application for Industrial Safety Monitoring System
 """
 
 import os
+import time
 from pathlib import Path
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 
 from backend.models import (
     HealthResponse,
@@ -18,18 +19,21 @@ from backend.models import (
     StatisticsResponse,
     TelemetryUpdate
 )
-from backend.services.safety_service import SafetyService
+from backend.services.safety_service import (
+    SafetyService,
+    generate_offline_placeholder_jpg
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 EVIDENCE_DIR = PROJECT_ROOT / "evidence"
 
 app = FastAPI(
     title="Industrial AI Safety Monitoring API",
-    description="FastAPI REST API serving worker safety states, events, statistics, and evidence snapshots.",
+    description="FastAPI REST API serving worker safety states, events, statistics, evidence snapshots, and MJPEG live stream.",
     version="1.0.0"
 )
 
-# Step 5: CORS Configuration
+# Step 8: CORS Configuration
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -87,6 +91,47 @@ def update_telemetry(update: TelemetryUpdate):
     """Receives live state/event updates from OpenCV processing pipeline."""
     safety_service.update_telemetry(update)
     return {"status": "updated"}
+
+
+@app.post("/api/telemetry/frame")
+async def update_telemetry_frame(request: Request):
+    """Receives raw annotated JPEG frame bytes from run_live.py api_bridge."""
+    frame_bytes = await request.body()
+    if frame_bytes:
+        safety_service.update_frame(frame_bytes)
+    return {"status": "frame_updated"}
+
+
+def generate_mjpeg_stream():
+    """MJPEG stream generator yielding multipart/x-mixed-replace JPEG frames."""
+    placeholder_bytes = generate_offline_placeholder_jpg()
+
+    while True:
+        time.sleep(0.033)  # Rate limit stream generator loop (~30 FPS max)
+
+        if safety_service.is_stream_active(timeout_sec=3.0):
+            frame_bytes = safety_service.get_latest_frame()
+            if not frame_bytes:
+                frame_bytes = placeholder_bytes
+        else:
+            frame_bytes = placeholder_bytes
+
+        yield (
+            b"--frame\r\n"
+            b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n"
+        )
+
+
+@app.get("/api/video/stream")
+def video_stream():
+    """
+    Serves live annotated OpenCV video stream as MJPEG.
+    Displays live feed when run_live.py is active, or offline banner when inactive.
+    """
+    return StreamingResponse(
+        generate_mjpeg_stream(),
+        media_type="multipart/x-mixed-replace; boundary=frame"
+    )
 
 
 @app.get("/api/evidence/{filename:path}")

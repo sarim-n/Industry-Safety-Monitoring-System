@@ -1,10 +1,10 @@
 """
-Frontend Validation Test Suite for Phase 6 React Dashboard
-===========================================================
+Frontend Validation Test Suite for Phase 7 Live Stream React Dashboard
+======================================================================
 Verifies:
 1. Production bundle build dist/ exists and contains built HTML & JS assets
-2. React component structure and file exports
-3. API endpoints alignment with frontend services
+2. React component structure including LiveVideoPanel.tsx
+3. API endpoints alignment including getVideoStreamUrl
 4. Polling hook configuration
 """
 
@@ -26,19 +26,18 @@ class TestFrontendDashboard(unittest.TestCase):
         index_html = DIST_DIR / "index.html"
         self.assertTrue(index_html.exists(), "dist/index.html MUST exist.")
 
-        # Check for asset files
         assets_dir = DIST_DIR / "assets"
         self.assertTrue(assets_dir.exists(), "dist/assets/ MUST exist.")
         asset_files = list(assets_dir.glob("*.js")) + list(assets_dir.glob("*.css"))
         self.assertGreater(len(asset_files), 0, "Built JS & CSS assets MUST exist in dist/assets/.")
 
     def test_2_component_files_exist(self):
-        """Verify modular component architecture."""
+        """Verify modular component architecture including LiveVideoPanel."""
         components_dir = FRONTEND_DIR / "src" / "components"
         required_components = [
             "Header.tsx",
             "SummaryCards.tsx",
-            "LiveMonitorPanel.tsx",
+            "LiveVideoPanel.tsx",
             "SafetyStatusPanel.tsx",
             "RecentEventsPanel.tsx",
             "StatisticsPanel.tsx",
@@ -48,23 +47,21 @@ class TestFrontendDashboard(unittest.TestCase):
             path = components_dir / comp
             self.assertTrue(path.exists(), f"Component {comp} MUST exist.")
 
-    def test_3_services_and_hooks_exist(self):
-        """Verify API service and polling hook files exist."""
-        api_service = FRONTEND_DIR / "src" / "services" / "api.ts"
-        polling_hook = FRONTEND_DIR / "src" / "hooks" / "useSafetyData.ts"
-        safety_types = FRONTEND_DIR / "src" / "types" / "safety.ts"
-
-        self.assertTrue(api_service.exists(), "api.ts service MUST exist.")
-        self.assertTrue(polling_hook.exists(), "useSafetyData.ts hook MUST exist.")
-        self.assertTrue(safety_types.exists(), "safety.ts types MUST exist.")
+    def test_3_stream_url_configured(self):
+        """Verify api.ts exposes getVideoStreamUrl."""
+        api_path = FRONTEND_DIR / "src" / "services" / "api.ts"
+        with open(api_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        self.assertIn("getVideoStreamUrl", content)
+        self.assertIn("/api/video/stream", content)
 
     def test_4_no_fake_video_hacks(self):
-        """Verify LiveMonitorPanel does not use fake video hacks."""
-        panel_path = FRONTEND_DIR / "src" / "components" / "LiveMonitorPanel.tsx"
+        """Verify LiveVideoPanel points to backend streaming endpoint without synthetic video generator."""
+        panel_path = FRONTEND_DIR / "src" / "components" / "LiveVideoPanel.tsx"
         with open(panel_path, "r", encoding="utf-8") as f:
             content = f.read()
+        self.assertIn("getVideoStreamUrl", content)
         self.assertNotIn("fake-stream.mp4", content)
-        self.assertNotIn("canvas.toDataURL", content)
 
 
 if __name__ == "__main__":

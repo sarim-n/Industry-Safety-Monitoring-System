@@ -6,7 +6,8 @@ import type {
   StatisticsResponse,
 } from '../types/safety';
 
-const API_BASE_URL = 'http://127.0.0.1:8000';
+const API_BASE_URL =
+  (import.meta as any).env?.VITE_API_URL || 'http://127.0.0.1:8000';
 
 async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const controller = new AbortController();
@@ -41,6 +42,7 @@ export const safetyApi = {
   getEvents: (limit = 20, offset = 0) =>
     fetchJson<EventModel[]>(`/api/events?limit=${limit}&offset=${offset}`),
   getStatistics: () => fetchJson<StatisticsResponse>('/api/statistics'),
+  getVideoStreamUrl: () => `${API_BASE_URL}/api/video/stream`,
   getEvidenceUrl: (evidencePath: string) => {
     if (!evidencePath) return '';
     const filename = evidencePath.split('/').pop()?.split('\\').pop() || evidencePath;

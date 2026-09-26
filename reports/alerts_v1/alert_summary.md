@@ -12,7 +12,7 @@
 
 ## 2. Phase 4 Alert & Evidence Metrics
 
-- **Total Frames Processed**: 301 frames (10.85 seconds)
+- **Total Frames Processed**: 301 frames (13.52 seconds)
 - **Unique Workers Observed**: 6
 - **Confirmed Violation Events**: 7
 - **Voice & System Alerts Emitted**: **7**
@@ -23,12 +23,12 @@
 
 ## 3. Real-Time Pipeline Throughput & Latency
 
-- **Average Measured Throughput**: **27.8 FPS**
-- **Average Frame Latency**: **24.79 ms / frame**
-- **YOLO Inference Latency**: `20.99 ms`
-- **PPE Association Latency**: `0.06 ms`
+- **Average Measured Throughput**: **22.3 FPS**
+- **Average Frame Latency**: **25.32 ms / frame**
+- **YOLO Inference Latency**: `20.97 ms`
+- **PPE Association Latency**: `0.07 ms`
 - **Temporal Confirmation Latency**: `0.02 ms`
-- **HUD & Evidence Rendering Latency**: `0.87 ms`
+- **HUD & Evidence Rendering Latency**: `0.95 ms`
 
 ## 4. Strict Protection Confirmations
 - **Dataset & Splits**: Untouched.

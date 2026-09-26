@@ -346,7 +346,7 @@ def main():
             cv2.putText(annotated_frame, "Press 'q' to exit live window",
                         (20, 118), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (150, 150, 150), 1, cv2.LINE_AA)
 
-            # --- STAGE 6: Optional API Telemetry Push ---
+            # --- STAGE 6: Optional API Telemetry & Frame Push ---
             if api_bridge and api_bridge.enabled:
                 worker_list = []
                 for trk in temporal_engine.active_tracks:
@@ -362,6 +362,7 @@ def main():
                         "evidence_path": saved_path if 'saved_path' in locals() else ""
                     }
                 api_bridge.push_update(active_workers=worker_list, latest_event=latest_evt)
+                api_bridge.push_frame(annotated_frame)
 
             # Record CSV performance row
             perf_csv_rows.append({

@@ -120,6 +120,14 @@ class TestFastAPIBackend(unittest.TestCase):
         self.assertIn(response_raw.status_code, [400, 404])
         self.assertNotEqual(response_raw.status_code, 200)
 
+    def test_10_video_stream_endpoint(self):
+        """GET /api/video/stream generator should yield valid multipart/x-mixed-replace JPEG frames."""
+        from backend.main import generate_mjpeg_stream
+        gen = generate_mjpeg_stream()
+        first_chunk = next(gen)
+        self.assertIn(b"--frame", first_chunk)
+        self.assertIn(b"Content-Type: image/jpeg", first_chunk)
+
 
 if __name__ == "__main__":
     unittest.main()
