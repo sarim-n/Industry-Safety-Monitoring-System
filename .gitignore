@@ -52,3 +52,11 @@ desktop.ini
 
 # ── Gemini agent scratch ──────────────────────────────────────────────────────
 .agents/
+
+# ── Model Weights & Training Runs (too large for GitHub) ──────────────────────
+*.pt
+runs/
+training_dataset/
+training_dataset_v2/
+reports/ppe_association_v1/visualizations/
+
