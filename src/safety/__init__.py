@@ -20,6 +20,9 @@ from .voice_alert import (
 from .evidence import (
     EvidenceManager
 )
+from .api_bridge import (
+    NonBlockingAPIBridge
+)
 
 __all__ = [
     "PPEAssociationConfig",
@@ -33,5 +36,6 @@ __all__ = [
     "AlertManagerConfig",
     "AlertManager",
     "VoiceAlertEngine",
-    "EvidenceManager"
+    "EvidenceManager",
+    "NonBlockingAPIBridge"
 ]

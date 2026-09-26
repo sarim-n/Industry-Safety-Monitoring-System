@@ -13,3 +13,10 @@ timestamp,worker_id,violation_type,evidence_path
 2026-09-26 12:06:04,1,NO_HELMET_AND_MASK,C:/Users/sarim/safety monitoring/evidence/20260926_12H06M04S_NO_HELMET_AND_MASK_worker_1.jpg
 2026-09-26 12:06:07,2,NO_HELMET,C:/Users/sarim/safety monitoring/evidence/20260926_12H06M07S_NO_HELMET_worker_2.jpg
 2026-09-26 12:06:07,1,NO_HELMET,C:/Users/sarim/safety monitoring/evidence/20260926_12H06M07S_NO_HELMET_worker_1.jpg
+2026-09-26 12:17:19,2,NO_HELMET,C:/Users/sarim/safety monitoring/evidence/20260926_12H17M19S_NO_HELMET_worker_2.jpg
+2026-09-26 12:17:19,1,NO_HELMET,C:/Users/sarim/safety monitoring/evidence/20260926_12H17M19S_NO_HELMET_worker_1.jpg
+2026-09-26 12:17:20,6,NO_HELMET_AND_MASK,C:/Users/sarim/safety monitoring/evidence/20260926_12H17M20S_NO_HELMET_AND_MASK_worker_6.jpg
+2026-09-26 12:17:22,2,NO_HELMET,C:/Users/sarim/safety monitoring/evidence/20260926_12H17M22S_NO_HELMET_worker_2.jpg
+2026-09-26 12:17:23,1,NO_HELMET_AND_MASK,C:/Users/sarim/safety monitoring/evidence/20260926_12H17M23S_NO_HELMET_AND_MASK_worker_1.jpg
+2026-09-26 12:17:26,2,NO_HELMET,C:/Users/sarim/safety monitoring/evidence/20260926_12H17M26S_NO_HELMET_worker_2.jpg
+2026-09-26 12:17:26,1,NO_HELMET,C:/Users/sarim/safety monitoring/evidence/20260926_12H17M26S_NO_HELMET_worker_1.jpg

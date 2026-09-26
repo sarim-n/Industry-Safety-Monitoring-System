@@ -52,6 +52,10 @@ from src.safety.voice_alert import (
 from src.safety.evidence import (
     EvidenceManager
 )
+from src.safety.api_bridge import (
+    NonBlockingAPIBridge
+)
+from datetime import datetime
 
 # Status color palette (BGR format)
 STATUS_COLORS = {
@@ -74,6 +78,8 @@ def parse_args():
     parser.add_argument("--max-frames", type=int, default=0, help="Max frames to process (0 = process all)")
     parser.add_argument("--save-video", type=str, default="", help="Optional path to save annotated output video")
     parser.add_argument("--disable-voice", action="store_true", help="Disable TTS voice alerts")
+    parser.add_argument("--enable-api", action="store_true", help="Enable live telemetry push to FastAPI backend")
+    parser.add_argument("--api-url", type=str, default="http://127.0.0.1:8000/api/telemetry", help="FastAPI telemetry endpoint URL")
     return parser.parse_args()
 
 
@@ -99,13 +105,14 @@ def main():
             sys.exit(1)
 
     print("==================================================================")
-    print("   LIVE OPENCV SAFETY MONITORING PIPELINE (PHASE 4: ALERTS & EVIDENCE)")
+    print("   LIVE OPENCV SAFETY MONITORING PIPELINE (PHASE 5: BACKEND INTEGRATED)")
     print("==================================================================")
     print(f"  Model Weights : {weights_path}")
     print(f"  Resolution    : {args.imgsz}x{args.imgsz}")
     print(f"  Input Source  : {cap_source} {'(Webcam)' if is_webcam else '(Video File)'}")
     print(f"  Headless Mode : {args.headless}")
     print(f"  Voice Alerts  : {'Disabled' if args.disable_voice else 'Enabled (Offline TTS)'}")
+    print(f"  API Bridge    : {'Enabled -> ' + args.api_url if args.enable_api else 'Disabled (Local Only)'}")
 
     # 3. Open Video Capture
     cap = cv2.VideoCapture(cap_source)
@@ -127,7 +134,7 @@ def main():
     print(f"  Source Props  : {frame_w}x{frame_h} @ {effective_fps:.1f} FPS (Total frames: {total_source_frames})")
 
     # 4. Initialize Core Pipeline Engines
-    print("\n[LOADING YOLO MODEL & PHASE 4 ENGINES]")
+    print("\n[LOADING YOLO MODEL & PIPELINE ENGINES]")
     model = YOLO(str(weights_path))
 
     # Frozen Validation-Selected Confidence Thresholds
@@ -149,13 +156,14 @@ def main():
     )
     temporal_engine = TemporalConfirmationEngine(temp_config)
 
-    # Phase 4 Engines: AlertManager, VoiceAlertEngine, EvidenceManager
+    # Phase 4 & 5 Engines: AlertManager, VoiceAlertEngine, EvidenceManager, API Bridge
     alert_manager = AlertManager(AlertManagerConfig(cooldown_seconds=5.0))
     voice_engine = VoiceAlertEngine(enabled=not args.disable_voice)
     evidence_manager = EvidenceManager(
         evidence_dir=str(Path(PROJECT_ROOT) / "evidence"),
         csv_path=str(Path(PROJECT_ROOT) / "reports" / "alerts_v1" / "events.csv")
     )
+    api_bridge = NonBlockingAPIBridge(api_url=args.api_url, enabled=args.enable_api)
 
     # Video Writer if requested
     video_writer = None
@@ -338,6 +346,23 @@ def main():
             cv2.putText(annotated_frame, "Press 'q' to exit live window",
                         (20, 118), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (150, 150, 150), 1, cv2.LINE_AA)
 
+            # --- STAGE 6: Optional API Telemetry Push ---
+            if api_bridge and api_bridge.enabled:
+                worker_list = []
+                for trk in temporal_engine.active_tracks:
+                    st = next((ps.safety_status for ps in person_states if ps.person_bbox == trk.last_bbox), "UNCERTAIN")
+                    worker_list.append({"worker_id": trk.track_id, "status": st})
+                latest_evt = None
+                if emitted_alerts_this_frame:
+                    e = emitted_alerts_this_frame[-1]
+                    latest_evt = {
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "worker_id": e.track_id,
+                        "violation_type": e.violation,
+                        "evidence_path": saved_path if 'saved_path' in locals() else ""
+                    }
+                api_bridge.push_update(active_workers=worker_list, latest_event=latest_evt)
+
             # Record CSV performance row
             perf_csv_rows.append({
                 'frame': frame_counter,
@@ -357,7 +382,7 @@ def main():
 
             # Display GUI window unless headless
             if not args.headless:
-                cv2.imshow("Industrial AI Safety Monitoring — Phase 4 Live Pipeline", annotated_frame)
+                cv2.imshow("Industrial AI Safety Monitoring — Phase 5 Live Pipeline", annotated_frame)
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord('q'):
                     print("\n[INFO] 'q' pressed. Exiting live loop cleanly...")
@@ -369,6 +394,7 @@ def main():
 
     finally:
         voice_engine.stop()
+        api_bridge.stop()
         t_loop_end = time.perf_counter()
         total_elapsed_sec = t_loop_end - t_loop_start
 
