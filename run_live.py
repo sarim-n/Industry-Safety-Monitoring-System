@@ -221,9 +221,9 @@ def main():
 
             frame_counter += 1
 
-            # --- STAGE 1: YOLO Inference ---
+            # --- STAGE 1: YOLO Inference (ByteTrack) ---
             t0 = time.perf_counter()
-            results = model.predict(frame, imgsz=args.imgsz, conf=0.05, verbose=False)[0]
+            results = model.track(frame, imgsz=args.imgsz, conf=0.05, tracker="bytetrack.yaml", persist=True, verbose=False)[0]
             t1 = time.perf_counter()
 
             raw_dets = []
@@ -231,7 +231,8 @@ def main():
                 c = int(box.cls[0].cpu().numpy())
                 conf = float(box.conf[0].cpu().numpy())
                 xyxy = box.xyxy[0].cpu().numpy().tolist()
-                raw_dets.append({'cls': c, 'conf': conf, 'box': xyxy})
+                tid = int(box.id[0].cpu().numpy()) if box.id is not None else None
+                raw_dets.append({'cls': c, 'conf': conf, 'box': xyxy, 'track_id': tid})
 
             # --- STAGE 1.5: Rule 1 Person Duplicate Suppression ---
             t1_5_start = time.perf_counter()

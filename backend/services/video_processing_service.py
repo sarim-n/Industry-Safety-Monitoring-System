@@ -160,6 +160,7 @@ def _process_video(job_id: str):
         )
         from src.safety.alert_manager import AlertManager, AlertManagerConfig
         from src.safety.evidence import EvidenceManager
+        from src.safety.voice_alert import VoiceAlertEngine
 
         # ---- Open input video ----
         cap = cv2.VideoCapture(str(job.input_path))
@@ -225,6 +226,7 @@ def _process_video(job_id: str):
             evidence_dir=str(PROJECT_ROOT / "evidence"),
             csv_path=str(PROJECT_ROOT / "reports" / "alerts_v1" / "events.csv"),
         )
+        voice_engine = VoiceAlertEngine(enabled=True)
 
         # ---- Counters ----
         frame_counter = 0
@@ -247,14 +249,15 @@ def _process_video(job_id: str):
             t_frame_start = time.perf_counter()
             frame_counter += 1
 
-            # STAGE 1: YOLO inference
-            results = model.predict(frame, imgsz=800, conf=0.05, verbose=False)[0]
+            # STAGE 1: YOLO inference (ByteTrack)
+            results = model.track(frame, imgsz=800, conf=0.05, tracker="bytetrack.yaml", persist=True, verbose=False)[0]
             raw_dets = []
             for box in results.boxes:
                 c = int(box.cls[0].cpu().numpy())
                 conf = float(box.conf[0].cpu().numpy())
                 xyxy = box.xyxy[0].cpu().numpy().tolist()
-                raw_dets.append({"cls": c, "conf": conf, "box": xyxy})
+                tid = int(box.id[0].cpu().numpy()) if box.id is not None else None
+                raw_dets.append({"cls": c, "conf": conf, "box": xyxy, "track_id": tid})
 
             # STAGE 1.5: Person duplicate suppression
             filtered_dets = suppress_duplicate_person_detections(raw_dets, frame_w, frame_h)
@@ -284,7 +287,7 @@ def _process_video(job_id: str):
 
                     if alert_manager.should_emit_alert(e.track_id, e.violation, e.timestamp_sec):
                         total_alerts_emitted += 1
-                        # NOTE: voice alerts intentionally disabled for uploaded video
+                        voice_engine.speak(e.violation)
                         emitted_alerts.append(e)
 
             for track in temporal_engine.active_tracks:
@@ -429,6 +432,7 @@ def _process_video(job_id: str):
                 job.progress = 0.0
 
         # ---- Cleanup ----
+        voice_engine.stop()
         cap.release()
         writer.release()
 

@@ -209,6 +209,9 @@ class PersonPPEState:
     # Final Derived Safety Status
     safety_status: str = "UNCERTAIN"
 
+    # Optional tracker ID assigned by an external tracker (e.g. ByteTrack)
+    track_id: Optional[int] = None
+
     # Phase 7.6 Diagnostics
     head_roi_bbox: Optional[Tuple[float, float, float, float]] = None
     face_roi_bbox: Optional[Tuple[float, float, float, float]] = None
@@ -269,7 +272,7 @@ class PPEAssociator:
             box = BBox(*d['box'])
 
             if c == 2 and conf >= self.config.person_conf:
-                persons.append({'box': box, 'conf': conf, 'raw': d})
+                persons.append({'box': box, 'conf': conf, 'raw': d, 'track_id': d.get('track_id')})
             elif c == 0 and conf >= self.config.helmet_conf:
                 helmets.append({'box': box, 'conf': conf, 'raw': d, 'assigned': False})
             elif c == 1 and conf >= self.config.mask_conf:
@@ -326,6 +329,7 @@ class PPEAssociator:
                 helmet_detected="UNKNOWN",
                 mask_detected="UNKNOWN",
                 safety_status="UNCERTAIN",
+                track_id=p.get('track_id'),
                 head_roi_bbox=(head_roi.x1, head_roi.y1, head_roi.x2, head_roi.y2),
                 face_roi_bbox=(face_roi.x1, face_roi.y1, face_roi.x2, face_roi.y2),
                 head_observable=head_obs,

@@ -86,21 +86,39 @@ class TemporalConfirmationEngine:
 
         events: List[ConfirmedViolationEvent] = []
 
-        # 1. Match PersonPPEStates against Active Tracks using IoU
-        # Candidate matches: (iou, track_idx, state_idx)
-        candidates = []
-        for t_idx, track in enumerate(self.active_tracks):
-            for s_idx, state in enumerate(person_states):
-                iou = box_iou(list(track.last_bbox), list(state.person_bbox))
-                if iou >= self.config.min_track_iou:
-                    candidates.append((iou, t_idx, s_idx))
-
-        # Sort candidate matches by IoU descending for greedy deterministic matching
-        candidates.sort(key=lambda x: x[0], reverse=True)
-
+        # 1. Match PersonPPEStates against Active Tracks
+        # If the state has an explicit track_id (e.g., from ByteTrack), match by that.
+        # Otherwise, fallback to greedy IoU matching.
         matched_tracks = set()
         matched_states = set()
         track_state_pairs: List[Tuple[TemporaryWorkerTrack, PersonPPEState]] = []
+
+        # Pass 1: Exact ID matching
+        for s_idx, state in enumerate(person_states):
+            if hasattr(state, 'track_id') and state.track_id is not None:
+                for t_idx, track in enumerate(self.active_tracks):
+                    if track.track_id == state.track_id and t_idx not in matched_tracks:
+                        matched_tracks.add(t_idx)
+                        matched_states.add(s_idx)
+                        track_state_pairs.append((track, state))
+                        break
+
+        # Pass 2: Fallback to IoU matching for any states without explicit track_ids
+        candidates = []
+        for t_idx, track in enumerate(self.active_tracks):
+            if t_idx in matched_tracks:
+                continue
+            for s_idx, state in enumerate(person_states):
+                if s_idx in matched_states:
+                    continue
+                # Only fallback to IoU if the state doesn't have an explicit ID
+                if getattr(state, 'track_id', None) is None:
+                    iou = box_iou(list(track.last_bbox), list(state.person_bbox))
+                    if iou >= self.config.min_track_iou:
+                        candidates.append((iou, t_idx, s_idx))
+
+        # Sort candidate matches by IoU descending for greedy deterministic matching
+        candidates.sort(key=lambda x: x[0], reverse=True)
 
         for iou, t_idx, s_idx in candidates:
             if t_idx not in matched_tracks and s_idx not in matched_states:
@@ -123,13 +141,17 @@ class TemporalConfirmationEngine:
         # 3. Create New Tracks for Unmatched Detections
         for s_idx, state in enumerate(person_states):
             if s_idx not in matched_states:
+                assigned_id = getattr(state, 'track_id', None)
+                if assigned_id is None:
+                    assigned_id = self.next_track_id
+                    self.next_track_id += 1
+                
                 new_track = TemporaryWorkerTrack(
-                    track_id=self.next_track_id,
+                    track_id=assigned_id,
                     last_bbox=state.person_bbox,
                     last_frame_index=frame_index,
                     missed_frames=0
                 )
-                self.next_track_id += 1
                 self.active_tracks.append(new_track)
                 track_state_pairs.append((new_track, state))
 
