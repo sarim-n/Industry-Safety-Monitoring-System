@@ -1,0 +1,14 @@
+names:
+- helmet
+- mask
+- person
+nc: 3
+roboflow:
+  license: Private
+  project: more-edpuy
+  url: https://app.roboflow.com/sarimahmedn-official-gmail-com/more-edpuy/1
+  version: 1
+  workspace: sarimahmedn-official-gmail-com
+test: ../test/images
+train: ../train/images
+val: ../valid/images

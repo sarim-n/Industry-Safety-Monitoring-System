@@ -1,0 +1,31 @@
+{
+  "existing_train": {
+    "images": 687,
+    "person_boxes": 2281,
+    "helmet_boxes": 937,
+    "mask_boxes": 912,
+    "mask_person_ratio": 0.3998246383165278,
+    "images_with_mask": 411,
+    "images_without_mask": 276
+  },
+  "new_data": {
+    "images": 308,
+    "person_boxes": 629,
+    "helmet_boxes": 239,
+    "mask_boxes": 244,
+    "mask_person_ratio": 0.38791732909379967,
+    "images_with_mask": 122,
+    "images_without_mask": 186
+  },
+  "run4_train": {
+    "images": 995,
+    "person_boxes": 2910,
+    "helmet_boxes": 1176,
+    "mask_boxes": 1156,
+    "mask_person_ratio": 0.3972508591065292,
+    "images_with_mask": 533,
+    "images_without_mask": 462
+  },
+  "exact_duplicates": 0,
+  "invalid_labels": 0
+}

@@ -1,0 +1,50 @@
+{
+  "gettyimages-1223673045-640_adpp.mp4": {
+    "v_idx": "video01",
+    "avg_persons": 2.0,
+    "avg_helmets": 1.0,
+    "avg_masks": 0.1,
+    "total_frames": 458,
+    "fps": 29.97
+  },
+  "gettyimages-1223674577-640_adpp.mp4": {
+    "v_idx": "video02",
+    "avg_persons": 2.3,
+    "avg_helmets": 0.2,
+    "avg_masks": 0.3,
+    "total_frames": 831,
+    "fps": 29.97
+  },
+  "gettyimages-1316819243-640_adpp.mp4": {
+    "v_idx": "video03",
+    "avg_persons": 3.5,
+    "avg_helmets": 0.2,
+    "avg_masks": 0.0,
+    "total_frames": 138,
+    "fps": 23.98
+  },
+  "gettyimages-1479449515-640_adpp.mp4": {
+    "v_idx": "video04",
+    "avg_persons": 2.5,
+    "avg_helmets": 0.0,
+    "avg_masks": 0.2,
+    "total_frames": 649,
+    "fps": 25.0
+  },
+  "gettyimages-2252592570-640_adpp.mp4": {
+    "v_idx": "video05",
+    "avg_persons": 1.7,
+    "avg_helmets": 0.5,
+    "avg_masks": 1.3,
+    "total_frames": 600,
+    "fps": 59.94
+  },
+  "gettyimages-2259036596-640_adpp.mp4": {
+    "v_idx": "video06",
+    "avg_persons": 5.5,
+    "avg_helmets": 1.7,
+    "avg_masks": 0.0,
+    "total_frames": 785,
+    "fps": 29.97
+  }
+}

@@ -1,0 +1,11 @@
+C:\Users\sarim\safety monitoring\final_dataset\images\val\10810476_hd_1920_1080_30fps_t01-40_f0042_jpg.rf.GqWxuUzwiX3lw53LVLmm.jpg
+C:\Users\sarim\safety monitoring\final_dataset\images\val\10810476_hd_1920_1080_30fps_t02-34_f0070_jpg.rf.L0vOe7LG0U94avRy1Hv2.jpg
+C:\Users\sarim\safety monitoring\final_dataset\images\val\10810476_hd_1920_1080_30fps_t04-00_f0120_jpg.rf.1eclKVkvLRktVlh210qw.jpg
+C:\Users\sarim\safety monitoring\final_dataset\images\val\10810476_hd_1920_1080_30fps_t09-01_f0270_jpg.rf.up5b4daFxtziW1RE2dqr.jpg
+C:\Users\sarim\safety monitoring\final_dataset\images\val\10810476_hd_1920_1080_30fps_t09-34_f0280_jpg.rf.bmpVUZ8yRb3syiw9yRd8.jpg
+C:\Users\sarim\safety monitoring\final_dataset\images\val\10810476_hd_1920_1080_30fps_t11-01_f0330_jpg.rf.K77KLKgkZAqn32kbp5Aq.jpg
+C:\Users\sarim\safety monitoring\final_dataset\images\val\10810476_hd_1920_1080_30fps_t11-68_f0350_jpg.rf.r9sCyGf06G3zwXovritC.jpg
+C:\Users\sarim\safety monitoring\final_dataset\images\val\10810476_hd_1920_1080_30fps_t15-52_f0465_jpg.rf.sHVmGncoIhlPzjMckZ3D.jpg
+C:\Users\sarim\safety monitoring\final_dataset\images\val\10810476_hd_1920_1080_30fps_t16-82_f0504_jpg.rf.agAepV3W9Ke3ZqXaagi2.jpg
+C:\Users\sarim\safety monitoring\final_dataset\images\val\10810476_hd_1920_1080_30fps_t17-75_f0532_jpg.rf.O4g7a1JRb6RLFdaH8Edw.jpg
+C:\Users\sarim\safety monitoring\final_dataset\images\val\10810476_hd_1920_1080_30fps_t20-79_f0623_jpg.rf.xrbhqDbG1zJf84WBFPiC.jpg

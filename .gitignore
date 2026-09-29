@@ -59,4 +59,10 @@ runs/
 training_dataset/
 training_dataset_v2/
 reports/ppe_association_v1/visualizations/
-
+evidence/
+mask data/
+final_dataset/
+final_dataset_without_10810476/
+training_dataset_run4/
+training_dataset_v3_mask_hard_negative/
+video_outputs/

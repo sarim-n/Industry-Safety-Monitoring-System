@@ -1,0 +1,25 @@
+Video,Rule_Label,Frames,Raw_Person_Detections,Raw_Duplicate_Frames,Raw_Duplicate_Pairs,Unique_Track_IDs,Avg_Active_Tracks,Max_Active_Tracks,Duplicate_Track_Frames,Track_Fragmentations,Status_Switches,Confirmed_Events,Suppression_Overhead_MS,Latency_MS,Pipeline_FPS
+4048038451-preview.mp4,BASELINE,301,611,2,2,6,2.16,4,22,0,100,5,0.0012,23.39,42.7
+4048038451-preview.mp4,RULE_1 (Ultra Conservative),301,611,2,2,6,2.16,4,22,0,100,5,0.0398,23.15,43.2
+4048038451-preview.mp4,RULE_2 (High Safety),301,609,0,0,4,2.09,3,0,0,93,5,0.0407,23.37,42.8
+4048038451-preview.mp4,RULE_4 (Conf-Gated),301,609,0,0,4,2.09,3,0,0,93,5,0.039,23.22,43.1
+8482302-hd_1920_1080_25fps.mp4,BASELINE,607,1125,170,217,22,2.54,7,287,0,164,10,0.0013,25.52,39.2
+8482302-hd_1920_1080_25fps.mp4,RULE_1 (Ultra Conservative),607,1082,134,166,22,2.38,7,273,0,115,7,0.029,22.01,45.4
+8482302-hd_1920_1080_25fps.mp4,RULE_2 (High Safety),607,1001,64,69,17,2.15,5,201,0,63,5,0.0252,20.37,49.1
+8482302-hd_1920_1080_25fps.mp4,RULE_4 (Conf-Gated),607,1088,143,167,19,2.36,6,279,0,121,8,0.0351,24.36,41.1
+4017518657-preview.mp4,BASELINE,236,499,18,18,7,2.39,4,50,0,67,6,0.0011,22.66,44.1
+4017518657-preview.mp4,RULE_1 (Ultra Conservative),236,496,15,15,7,2.37,4,45,0,67,6,0.0394,22.67,44.1
+4017518657-preview.mp4,RULE_2 (High Safety),236,483,2,2,5,2.23,3,16,0,44,5,0.0372,22.48,44.5
+4017518657-preview.mp4,RULE_4 (Conf-Gated),236,491,10,10,6,2.3,3,33,0,58,6,0.042,23.16,43.2
+19832490-hd_1920_1080_25fps.mp4,BASELINE,144,1048,85,120,35,11.01,16,144,0,114,10,0.0033,41.96,23.8
+19832490-hd_1920_1080_25fps.mp4,RULE_1 (Ultra Conservative),144,1021,69,89,32,10.31,15,143,0,93,10,0.2857,40.21,24.9
+19832490-hd_1920_1080_25fps.mp4,RULE_2 (High Safety),144,963,28,28,25,8.94,12,96,0,84,11,0.2361,31.69,31.6
+19832490-hd_1920_1080_25fps.mp4,RULE_4 (Conf-Gated),144,997,51,68,33,10.24,15,142,0,102,13,0.2072,29.86,33.5
+no safety.mp4,BASELINE,322,1054,195,241,15,3.82,6,266,0,9,15,0.001,19.8,50.5
+no safety.mp4,RULE_1 (Ultra Conservative),322,1037,190,223,14,3.75,6,266,0,9,15,0.0657,22.74,44.0
+no safety.mp4,RULE_2 (High Safety),322,954,132,135,9,3.29,5,190,0,9,10,0.0705,24.48,40.9
+no safety.mp4,RULE_4 (Conf-Gated),322,991,155,177,12,3.56,5,237,0,9,13,0.0736,25.06,39.9
+helmet+mask+gloves.mp4,BASELINE,580,1223,77,77,13,2.43,4,205,0,142,2,0.0017,27.14,36.8
+helmet+mask+gloves.mp4,RULE_1 (Ultra Conservative),580,1217,71,71,13,2.43,4,205,0,138,2,0.0431,23.16,43.2
+helmet+mask+gloves.mp4,RULE_2 (High Safety),580,1157,11,11,8,2.11,3,33,0,67,2,0.0337,21.26,47.0
+helmet+mask+gloves.mp4,RULE_4 (Conf-Gated),580,1198,52,52,13,2.4,4,192,0,121,1,0.037,21.66,46.2

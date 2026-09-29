@@ -1,0 +1,6 @@
+Rule_Label,Description,Total_Pred_Persons,Precision,Recall,F1,GT_Persons_Missed,True_Dups_Removed,True_Dup_Removal_Pct,Legit_Overlaps_Suppressed,Legit_Worker_Preservation_Pct,Partial_FP_Affected,Avg_Boxes_Per_GT
+BASELINE,No suppression (Raw YOLO),428,0.785,0.8705,0.8256,50,0,0.0,0,100.0,0,0.9974
+RULE_1 (Ultra Conservative),IoU>=0.65 & MaxCont>=0.95 & NDist<=0.10 & AreaR>=0.60,419,0.7995,0.8679,0.8323,51,8,19.0,1,94.7,0,0.9741
+RULE_2 (High Safety),IoU>=0.55 & MaxCont>=0.85 & NDist<=0.15 & AreaR>=0.50,393,0.8346,0.8497,0.8421,58,24,57.1,11,42.1,4,0.9145
+RULE_3 (Balanced),IoU>=0.50 & MaxCont>=0.80 & NDist<=0.20 & AreaR>=0.40,371,0.8625,0.829,0.8454,66,36,85.7,19,0.0,6,0.8627
+RULE_4 (Conf-Gated),IoU>=0.55 & MaxCont>=0.85 & ConfDiff>=0.15 & AreaR>=0.45,403,0.8238,0.8601,0.8416,54,18,42.9,5,73.7,2,0.9378

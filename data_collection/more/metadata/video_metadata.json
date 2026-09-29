@@ -1,0 +1,56 @@
+[
+  {
+    "filename": "gettyimages-1223673045-640_adpp.mp4",
+    "width": 768,
+    "height": 432,
+    "fps": 29.97,
+    "total_frames": 458,
+    "duration_sec": 15.28,
+    "path": "data_collection\\more\\gettyimages-1223673045-640_adpp.mp4"
+  },
+  {
+    "filename": "gettyimages-1223674577-640_adpp.mp4",
+    "width": 768,
+    "height": 432,
+    "fps": 29.97,
+    "total_frames": 831,
+    "duration_sec": 27.73,
+    "path": "data_collection\\more\\gettyimages-1223674577-640_adpp.mp4"
+  },
+  {
+    "filename": "gettyimages-1316819243-640_adpp.mp4",
+    "width": 768,
+    "height": 432,
+    "fps": 23.98,
+    "total_frames": 138,
+    "duration_sec": 5.76,
+    "path": "data_collection\\more\\gettyimages-1316819243-640_adpp.mp4"
+  },
+  {
+    "filename": "gettyimages-1479449515-640_adpp.mp4",
+    "width": 768,
+    "height": 432,
+    "fps": 25.0,
+    "total_frames": 649,
+    "duration_sec": 25.96,
+    "path": "data_collection\\more\\gettyimages-1479449515-640_adpp.mp4"
+  },
+  {
+    "filename": "gettyimages-2252592570-640_adpp.mp4",
+    "width": 768,
+    "height": 432,
+    "fps": 59.94,
+    "total_frames": 600,
+    "duration_sec": 10.01,
+    "path": "data_collection\\more\\gettyimages-2252592570-640_adpp.mp4"
+  },
+  {
+    "filename": "gettyimages-2259036596-640_adpp.mp4",
+    "width": 768,
+    "height": 432,
+    "fps": 29.97,
+    "total_frames": 785,
+    "duration_sec": 26.19,
+    "path": "data_collection\\more\\gettyimages-2259036596-640_adpp.mp4"
+  }
+]

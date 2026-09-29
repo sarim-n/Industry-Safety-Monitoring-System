@@ -1,0 +1,9 @@
+Metric,Value
+total_validation_images,136
+total_gt_persons,386
+total_pred_persons,428
+candidate_duplicate_pairs_iou50,67
+true_duplicate_pairs,42
+legitimate_overlap_pairs,19
+partial_fp_pairs,5
+false_positive_pairs,1

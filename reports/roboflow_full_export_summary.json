@@ -1,0 +1,53 @@
+{
+  "roboflow": {
+    "workspace": "sarimahmedn-official-gmail-com",
+    "project": "more-edpuy",
+    "dataset_version": 1,
+    "classes": {
+      "0": "helmet",
+      "1": "mask",
+      "2": "person"
+    }
+  },
+  "dataset": {
+    "total_images": 308,
+    "train_images": 308,
+    "valid_images": 0,
+    "test_images": 0
+  },
+  "annotations": {
+    "helmet_boxes": 239,
+    "mask_boxes": 244,
+    "person_boxes": 629,
+    "total_boxes": 1112
+  },
+  "mask_analysis": {
+    "mask_person_ratio": 0.3879,
+    "images_with_mask": 122,
+    "images_without_mask": 186
+  },
+  "new_data": {
+    "new_images_detected": 122,
+    "present_in_project": "YES"
+  },
+  "quality": {
+    "corrupt_images": 0,
+    "invalid_labels": 0,
+    "missing_labels": 0,
+    "exact_duplicates": 0,
+    "near_duplicates": 283,
+    "cross_split_duplicates": 0
+  },
+  "candidates": {
+    "hard_negative_candidates": 186,
+    "difficult_positive_candidates": 122
+  },
+  "safety": {
+    "existing_project_modified": false,
+    "existing_training_dataset_v2_modified": false,
+    "validation_modified": false,
+    "test_modified": false,
+    "roboflow_data_modified": false,
+    "model_trained": false
+  }
+}

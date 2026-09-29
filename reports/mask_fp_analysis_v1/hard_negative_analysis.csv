@@ -1,0 +1,6 @@
+Visual Cause,Count,Percentage,Description
+Beard / Moustache / Facial Hair,18,31.0%,Unmasked workers with facial hair misclassified as dark fabric masks
+Face Shadows / Dark Mouth & Lips,22,37.9%,Low-light shadows under nose/chin or dark lip contrast
+Hand / Glove Near Face,7,12.1%,Worker raising hand or glove near mouth/chin region
+Clothing Collar / Hood Near Face,6,10.3%,Dark high jacket collar or hoodie zip near chin
+Side Profile / Occlusion,5,8.6%,Lateral face angle or partial object occlusion

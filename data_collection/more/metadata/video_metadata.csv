@@ -1,0 +1,7 @@
+video_id,filename,resolution,width,height,fps,total_frames,duration_sec
+video01,gettyimages-1223673045-640_adpp.mp4,768x432,768,432,29.97,458,15.28
+video02,gettyimages-1223674577-640_adpp.mp4,768x432,768,432,29.97,831,27.73
+video03,gettyimages-1316819243-640_adpp.mp4,768x432,768,432,23.98,138,5.76
+video04,gettyimages-1479449515-640_adpp.mp4,768x432,768,432,25.0,649,25.96
+video05,gettyimages-2252592570-640_adpp.mp4,768x432,768,432,59.94,600,10.01
+video06,gettyimages-2259036596-640_adpp.mp4,768x432,768,432,29.97,785,26.19

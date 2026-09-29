@@ -1,0 +1,8 @@
+path: C:\Users\sarim\safety monitoring\final_dataset
+train: images/train
+val: C:\Users\sarim\safety monitoring\val_10810476.txt
+
+names:
+  0: helmet
+  1: mask
+  2: person
