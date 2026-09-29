@@ -74,7 +74,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Real-Time Industrial AI Safety Monitoring Pipeline")
     parser.add_argument("--source", type=str, default=r"data_collection/videos/4048038451-preview.mp4",
                         help="Video file path or webcam index (0 for default webcam)")
-    parser.add_argument("--weights", type=str, default=r"runs/detect/safety_v1-4_run2b_yolov8s_800/weights/best.pt",
+    parser.add_argument("--weights", type=str, default=r"runs/detect/runs/detect/safety_v1-4_run2b_clean10810476_yolov8s_800/weights/best.pt",
                         help="Path to trained YOLO best.pt weights")
     parser.add_argument("--imgsz", type=int, default=800, help="Inference resolution (default: 800)")
     parser.add_argument("--headless", action="store_true", help="Run without cv2.imshow GUI display")
@@ -93,7 +93,13 @@ def main():
     weights_path = Path(args.weights)
     if not weights_path.is_absolute():
         weights_path = Path(PROJECT_ROOT) / weights_path
-    assert weights_path.exists(), f"Model weights file not found: {weights_path}"
+    
+    print(f"MODEL: {weights_path.parent.parent.name}")
+    print(f"WEIGHTS: {weights_path.resolve()}")
+
+    if not weights_path.exists():
+        print(f"[ERROR] Model weights file not found: {weights_path.resolve()}")
+        sys.exit(1)
 
     # 2. Determine Video / Webcam Source
     source_input = args.source
@@ -420,7 +426,7 @@ def main():
 
     # 5. Export Performance CSV Log
     with open(perf_csv_path, 'w', newline='', encoding='utf-8') as f:
-        fieldnames = ['frame', 'total_frame_ms', 'yolo_ms', 'assoc_ms', 'temp_ms', 'render_ms', 'rolling_fps', 'active_workers', 'confirmed_events_emitted']
+        fieldnames = ['frame', 'total_frame_ms', 'yolo_ms', 'suppress_ms', 'assoc_ms', 'temp_ms', 'render_ms', 'rolling_fps', 'active_workers', 'confirmed_events_emitted']
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(perf_csv_rows)
@@ -441,7 +447,7 @@ def main():
         f.write("## 1. Executive Summary & Setup\n")
         f.write("- **Pipeline Version**: Phase 4 Live Safety Monitoring System\n")
         f.write("- **Script**: `run_live.py`\n")
-        f.write("- **Target Model**: `runs/detect/safety_v1-4_run2b_yolov8s_800/weights/best.pt` (YOLOv8s @ 800)\n")
+        f.write("- **Target Model**: `runs/detect/runs/detect/safety_v1-4_run2b_clean10810476_yolov8s_800/weights/best.pt` (YOLOv8s @ 800)\n")
         f.write(f"- **Input Source**: `{cap_source}` {'(Webcam Mode)' if is_webcam else '(Video File Mode)'}\n")
         f.write(f"- **Resolution**: {frame_w}x{frame_h} @ {effective_fps:.1f} FPS\n")
         f.write("- **Operating Thresholds**: `PERSON_CONF=0.50`, `HELMET_CONF=0.25`, `MASK_CONF=0.20`\n")
@@ -468,7 +474,7 @@ def main():
 
         f.write("## 4. Strict Protection Confirmations\n")
         f.write("- **Dataset & Splits**: Untouched.\n")
-        f.write("- **Model Architecture & Weights**: Untouched (`runs/detect/safety_v1-4_run2b_yolov8s_800/weights/best.pt`).\n")
+        f.write("- **Model Architecture & Weights**: Untouched (`runs/detect/runs/detect/safety_v1-4_run2b_clean10810476_yolov8s_800/weights/best.pt`).\n")
         f.write("- **Confidence Thresholds**: Untouched (`PERSON_CONF=0.50`, `HELMET_CONF=0.25`, `MASK_CONF=0.20`).\n")
         f.write("- **PPE Association Algorithm**: Untouched.\n")
         f.write("- **Temporal Confirmation Engine**: Untouched.\n")

@@ -7,7 +7,7 @@ import os
 import time
 from pathlib import Path
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, HTTPException, Query, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 
@@ -23,6 +23,7 @@ from backend.services.safety_service import (
     SafetyService,
     generate_offline_placeholder_jpg
 )
+from backend.services import video_processing_service as vps
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 EVIDENCE_DIR = PROJECT_ROOT / "evidence"
@@ -132,6 +133,119 @@ def video_stream():
         generate_mjpeg_stream(),
         media_type="multipart/x-mixed-replace; boundary=frame"
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VIDEO UPLOAD & PROCESSING ENDPOINTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024  # 2 GB hard cap
+
+
+@app.post("/api/video/upload")
+async def upload_video(file: UploadFile = File(...)):
+    """
+    Accept a video file upload, validate it, and start background safety processing.
+    Returns job_id immediately without blocking.
+    """
+    # 1. Extension validation
+    if not vps.is_allowed_extension(file.filename or ""):
+        raise HTTPException(
+            status_code=415,
+            detail=f"Unsupported file type. Allowed: {', '.join(vps.ALLOWED_EXTENSIONS)}",
+        )
+
+    # 2. Read file (size guard)
+    file_bytes = await file.read()
+    if len(file_bytes) == 0:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+    if len(file_bytes) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File exceeds 2 GB limit.")
+
+    # 3. Create job
+    try:
+        job = vps.create_job(file.filename or "upload.mp4", file_bytes)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    return {
+        "job_id": job.job_id,
+        "status": job.status,
+        "message": "Processing started in background.",
+    }
+
+
+@app.get("/api/video/status/{job_id}")
+def get_video_status(job_id: str):
+    """Poll job processing status, progress, and frame counts."""
+    job = vps.get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    return {
+        "job_id": job.job_id,
+        "status": job.status,
+        "progress": round(job.progress, 1),
+        "current_frame": job.current_frame,
+        "total_frames": job.total_frames,
+        "error": job.error,
+    }
+
+
+@app.get("/api/video/output/{job_id}")
+def get_video_output(job_id: str):
+    """Stream the annotated output video for browser playback (MP4 or AVI)."""
+    job = vps.get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    if job.status != "completed":
+        raise HTTPException(status_code=409, detail=f"Job not completed. Status: {job.status}")
+    if not job.output_path.exists():
+        raise HTTPException(status_code=404, detail="Output file not found on disk.")
+
+    suffix = job.output_path.suffix.lower()
+    media_type = "video/mp4" if suffix == ".mp4" else "video/x-msvideo"
+    return FileResponse(
+        path=str(job.output_path),
+        media_type=media_type,
+        filename=f"annotated_{job_id[:8]}{suffix}",
+        headers={"Accept-Ranges": "bytes"},
+    )
+
+
+
+@app.get("/api/video/results/{job_id}")
+def get_video_results(job_id: str):
+    """Return final statistics for a completed job."""
+    job = vps.get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    if job.status not in ("completed", "failed"):
+        raise HTTPException(status_code=409, detail=f"Job not finished. Status: {job.status}")
+    return {
+        "job_id": job.job_id,
+        "status": job.status,
+        "error": job.error,
+        "frames_processed": job.frames_processed,
+        "processing_fps": job.processing_fps,
+        "workers_detected": job.workers_detected,
+        "confirmed_violations": job.confirmed_violations,
+        "no_helmet": job.no_helmet,
+        "no_mask": job.no_mask,
+        "no_helmet_and_mask": job.no_helmet_and_mask,
+        "evidence_count": job.evidence_count,
+        "codec_used": job.codec_used,
+        "model": "YOLOv8s Clean Run 2B — runs/detect/runs/detect/safety_v1-4_run2b_clean10810476_yolov8s_800/weights/best.pt",
+    }
+
+
+@app.get("/api/video/upload")
+async def get_video_upload():
+    """Return upload constraints."""
+    return {
+        "allowed_extensions": list(vps.ALLOWED_EXTENSIONS),
+        "max_size_bytes": MAX_UPLOAD_BYTES,
+        "model": "YOLOv8s Clean Run 2B",
+    }
 
 
 @app.get("/api/evidence/{filename:path}")
